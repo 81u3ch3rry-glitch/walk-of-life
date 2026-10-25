@@ -303,6 +303,7 @@
 	let bumperHits = 0;
 	let sweetMode = false;
 	let sweetTimer = null;
+	let speedMultiplier = 1;
   let snakeTimer = null, snake, direction, food, snakeScore = 0;
 
   window.wolShowGame = function (name) {
@@ -321,7 +322,8 @@
   clearTimeout(sweetTimer);
   sweetTimer = null;
   sweetMode = false;
-  bumperHits = 0;
+speedMultiplier = 1;
+bumperHits = 0;
 
   ball = { x: 220, y: 320, vx: 0, vy: 0 };
   pinScore = 0;
@@ -338,9 +340,9 @@
     ball.vy = 3 + Math.random() * 2;
 
     pinTimer = setInterval(() => {
-      ball.x += ball.vx;
-      ball.y += ball.vy;
-      ball.vy += .12;
+      ball.x += ball.vx * speedMultiplier;
+	ball.y += ball.vy * speedMultiplier;
+	ball.vy += .12;
 
       if (ball.x < 12 || ball.x > 428) ball.vx *= -1;
       if (ball.y < 12) ball.vy = Math.abs(ball.vy);
@@ -361,15 +363,13 @@
 
 if (bumperHits >= 5 && !sweetMode) {
   sweetMode = true;
-  ball.vx *= 10;
-  ball.vy *= 10;
+  speedMultiplier = 10;
 
   clearTimeout(sweetTimer);
 
   sweetTimer = setTimeout(() => {
     sweetMode = false;
-    ball.vx /= 10;
-    ball.vy /= 10;
+    speedMultiplier = 1;
     sweetTimer = null;
     drawPinball();
   }, 10000);
