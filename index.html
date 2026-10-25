@@ -353,13 +353,13 @@
 
 if (bumperHits >= 5 && !sweetMode) {
   sweetMode = true;
-  ball.vx *= 2;
-  ball.vy *= 2;
+  ball.vx *= 10;
+  ball.vy *= 10;
 
   setTimeout(() => {
     sweetMode = false;
-    ball.vx *= 0.5;
-    ball.vy *= 0.5;
+    ball.vx /= 10;
+	ball.vy /= 10;
     drawPinball();
   }, 10000);
 }
