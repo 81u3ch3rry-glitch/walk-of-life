@@ -302,6 +302,7 @@
   let ball, pinScore = 0, leftFlip = false, rightFlip = false;
 	let bumperHits = 0;
 	let sweetMode = false;
+	let sweetTimer = null;
   let snakeTimer = null, snake, direction, food, snakeScore = 0;
 
   window.wolShowGame = function (name) {
@@ -314,13 +315,20 @@
   };
 
   function resetPinball() {
-    clearInterval(pinTimer);
-    pinTimer = null;
-    ball = { x: 220, y: 320, vx: 0, vy: 0 };
-    pinScore = 0;
-    $("wol-pin-score").textContent = "Score: 0";
-    drawPinball();
-  }
+  clearInterval(pinTimer);
+  pinTimer = null;
+
+  clearTimeout(sweetTimer);
+  sweetTimer = null;
+  sweetMode = false;
+  bumperHits = 0;
+
+  ball = { x: 220, y: 320, vx: 0, vy: 0 };
+  pinScore = 0;
+
+  $("wol-pin-score").textContent = "Score: 0";
+  drawPinball();
+}
 
   window.wolStartPinball = function () {
     resetPinball();
@@ -356,10 +364,13 @@ if (bumperHits >= 5 && !sweetMode) {
   ball.vx *= 10;
   ball.vy *= 10;
 
-  setTimeout(() => {
+  clearTimeout(sweetTimer);
+
+  sweetTimer = setTimeout(() => {
     sweetMode = false;
     ball.vx /= 10;
-	ball.vy /= 10;
+    ball.vy /= 10;
+    sweetTimer = null;
     drawPinball();
   }, 10000);
 }
