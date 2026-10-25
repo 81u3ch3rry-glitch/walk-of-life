@@ -300,6 +300,8 @@
   let current = "pinball";
   let pinTimer = null;
   let ball, pinScore = 0, leftFlip = false, rightFlip = false;
+	let bumperHits = 0;
+	let sweetMode = false;
   let snakeTimer = null, snake, direction, food, snakeScore = 0;
 
   window.wolShowGame = function (name) {
@@ -347,6 +349,20 @@
           ball.x = x + Math.cos(angle)*36;
           ball.y = y + Math.sin(angle)*36;
           pinScore++;
+			bumperHits++;
+
+if (bumperHits >= 5 && !sweetMode) {
+  sweetMode = true;
+  ball.vx *= 2;
+  ball.vy *= 2;
+
+  setTimeout(() => {
+    sweetMode = false;
+    ball.vx *= 0.5;
+    ball.vy *= 0.5;
+    drawPinball();
+  }, 10000);
+}
           $("wol-pin-score").textContent = "Score: " + pinScore;
         }
       });
@@ -387,6 +403,15 @@ drawPinball();
     p.clearRect(0,0,440,440);
     p.fillStyle = "#eaf6ff";
     p.fillRect(0,0,440,440);
+	  if (sweetMode) {
+  p.fillStyle = "#ff477e";
+  p.fillRect(65, 40, 310, 38);
+  p.fillStyle = "white";
+  p.font = "bold 23px Arial";
+  p.textAlign = "center";
+  p.fillText("SWEET MODE!", 220, 67);
+  p.textAlign = "left";
+}
 
     [[100,100],[330,120],[220,200],[120,275],[330,280]].forEach(([x,y]) => {
       p.beginPath();
