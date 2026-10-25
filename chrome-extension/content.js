@@ -49,7 +49,23 @@
   });
 
   function requestStatus(){ if (connected) sendAction('status'); }
-  // Intentionally no live timer/progress updates: the flaky time bar is disabled.
+  // Keep the time labels hidden, but update the visual progress bar from Music's live position.
+  function updateProgressBar() {
+    const fill = document.querySelector('.progress-fill');
+    if (!fill) return;
+    const duration = latestDuration;
+    const position = latestPosition;
+    const percent = duration > 0 ? Math.max(0, Math.min(100, (position / duration) * 100)) : 0;
+    // A short linear transition makes polling look smooth without inventing a timer.
+    fill.style.transition = latestState === 'playing' ? 'width 1.5s linear' : 'none';
+    fill.style.width = `${percent}%`;
+    fill.setAttribute('role', 'progressbar');
+    fill.setAttribute('aria-valuemin', '0');
+    fill.setAttribute('aria-valuemax', '100');
+    fill.setAttribute('aria-valuenow', String(Math.round(percent)));
+    fill.setAttribute('aria-label', 'Song progress');
+  }
+
   function startEqualizer() {
     const bars = [...document.querySelectorAll('.equalizer .bar')];
     bars.forEach(bar => {
@@ -84,6 +100,7 @@
     latestDuration = Number(data.duration) || 0;
     latestState = String(data.state || 'stopped').toLowerCase();
     lastReceivedAt = Date.now();
+    updateProgressBar();
 
     const titleEl = document.querySelector('.song-title');
     const artistEl = document.querySelector('.song-artist');
