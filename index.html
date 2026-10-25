@@ -183,7 +183,7 @@
       <div style="font-size:80px">🍦🎸🍒</div>
       <h1>SECRET FLAVOR MODE!</h1>
       <p style="font-size:22px">
-        You've discovered the sweet side of rock 'n' roll!
+        You've discovered the sweet side of music!
       </p>
       <div style="font-size:32px">🍬 🍓 🍫 🌈 🍭 🍦 🍒</div>
       <button id="closeFlavor" style="
@@ -212,6 +212,283 @@
       toggleSecretFlavor();
     }
   });
+})();
+</script>
+<!-- WALK OF LIFE ARCADE -->
+<style>
+  #wol-arcade {
+    margin: 30px auto;
+    padding: 24px;
+    max-width: 700px;
+    box-sizing: border-box;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #005696, #333366);
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
+
+  #wol-arcade button {
+    margin: 6px;
+    padding: 12px 18px;
+    border: 0;
+    border-radius: 10px;
+    background: white;
+    color: #333366;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  #wol-arcade button:hover {
+    transform: scale(1.04);
+  }
+
+  #wol-arcade canvas {
+    display: block;
+    width: 100%;
+    max-width: 440px;
+    height: auto;
+    margin: 16px auto;
+    border: 3px solid white;
+    border-radius: 12px;
+    background: #f4faff;
+    touch-action: none;
+  }
+
+  #wol-arcade .wol-game {
+    display: none;
+  }
+
+  #wol-arcade .wol-game.active {
+    display: block;
+  }
+</style>
+
+<section id="wol-arcade">
+  <h2>🍦 Walk Of Life Arcade 🎮</h2>
+  <p>Choose your game!</p>
+
+  <button onclick="wolShowGame('pinball')">🍒 Sundae Pinball</button>
+  <button onclick="wolShowGame('snake')">🐍 Ice Cream Snake</button>
+
+  <div id="wol-pinball" class="wol-game">
+    <h3>🍒 Sundae Pinball</h3>
+    <p>Use the left and right arrow keys to flip!</p>
+    <canvas id="wol-pin-canvas" width="440" height="440"></canvas>
+    <button onclick="wolStartPinball()">Start / Restart</button>
+    <p id="wol-pin-score">Score: 0</p>
+  </div>
+
+  <div id="wol-snake" class="wol-game">
+    <h3>🐍 Ice Cream Snake</h3>
+    <p>Collect scoops with the arrow keys!</p>
+    <canvas id="wol-snake-canvas" width="400" height="400"></canvas>
+    <button onclick="wolStartSnake()">Start / Restart</button>
+    <p id="wol-snake-score">Scoops: 0</p>
+  </div>
+</section>
+<!-- END WALK OF LIFE ARCADE -->
+	
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const pin = $("wol-pin-canvas");
+  const p = pin.getContext("2d");
+  const snakeCanvas = $("wol-snake-canvas");
+  const s = snakeCanvas.getContext("2d");
+
+  let current = "pinball";
+  let pinTimer = null;
+  let ball, pinScore = 0, leftFlip = false, rightFlip = false;
+  let snakeTimer = null, snake, direction, food, snakeScore = 0;
+
+  window.wolShowGame = function (name) {
+    current = name;
+    document.querySelectorAll("#wol-arcade .wol-game")
+      .forEach(el => el.classList.remove("active"));
+    $("wol-" + name).classList.add("active");
+    if (name === "pinball") drawPinball();
+    if (name === "snake") drawSnake();
+  };
+
+  function resetPinball() {
+    clearInterval(pinTimer);
+    pinTimer = null;
+    ball = { x: 220, y: 320, vx: 0, vy: 0 };
+    pinScore = 0;
+    $("wol-pin-score").textContent = "Score: 0";
+    drawPinball();
+  }
+
+  window.wolStartPinball = function () {
+    resetPinball();
+    ball.x = 190 + Math.random() * 60;
+    ball.y = 260;
+    ball.vx = (Math.random() - .5) * 6;
+    ball.vy = 3 + Math.random() * 2;
+
+    pinTimer = setInterval(() => {
+      ball.x += ball.vx;
+      ball.y += ball.vy;
+      ball.vy += .12;
+
+      if (ball.x < 12 || ball.x > 428) ball.vx *= -1;
+      if (ball.y < 12) ball.vy = Math.abs(ball.vy);
+
+      const bumpers = [[100,100],[330,120],[220,200],[120,275],[330,280]];
+      bumpers.forEach(([x,y]) => {
+        const dx = ball.x-x, dy = ball.y-y;
+        const distance = Math.hypot(dx,dy);
+        if (distance < 35) {
+          const angle = Math.atan2(dy,dx);
+          const speed = 4 + Math.random()*4;
+          ball.vx = Math.cos(angle)*speed + (Math.random()-.5)*2;
+          ball.vy = Math.sin(angle)*speed;
+          ball.x = x + Math.cos(angle)*36;
+          ball.y = y + Math.sin(angle)*36;
+          pinScore++;
+          $("wol-pin-score").textContent = "Score: " + pinScore;
+        }
+      });
+
+      if (ball.y > 350 && ball.y < 405 && ball.vy > 0) {
+        if (ball.x > 95 && ball.x < 195 && leftFlip) {
+          ball.vy = -Math.random()*6-5;
+          ball.vx = -2 + Math.random()*5;
+          pinScore++;
+        }
+        if (ball.x > 245 && ball.x < 345 && rightFlip) {
+          ball.vy = -Math.random()*6-5;
+          ball.vx = -2 + Math.random()*5;
+          pinScore++;
+        }
+        $("wol-pin-score").textContent = "Score: " + pinScore;
+      }
+
+      if (ball.y > 440) {
+        clearInterval(pinTimer);
+        pinTimer = null;
+      }
+      drawPinball();
+    }, 25);
+  };
+
+  function drawPinball() {
+    p.clearRect(0,0,440,440);
+    p.fillStyle = "#eaf6ff";
+    p.fillRect(0,0,440,440);
+
+    [[100,100],[330,120],[220,200],[120,275],[330,280]].forEach(([x,y]) => {
+      p.beginPath();
+      p.arc(x,y,25,0,Math.PI*2);
+      p.fillStyle="#005696";
+      p.fill();
+      p.font="23px Arial";
+      p.fillStyle="white";
+      p.fillText("🍦",x-13,y+8);
+    });
+
+    p.save();
+    p.translate(145,386);
+    p.rotate(leftFlip ? -.45 : .15);
+    p.fillStyle="#ff477e";
+    p.fillRect(-45,-6,90,12);
+    p.restore();
+
+    p.save();
+    p.translate(295,386);
+    p.rotate(rightFlip ? .45 : -.15);
+    p.fillStyle="#ff477e";
+    p.fillRect(-45,-6,90,12);
+    p.restore();
+
+    p.beginPath();
+    p.arc(ball.x,ball.y,12,0,Math.PI*2);
+    p.fillStyle="#ff477e";
+    p.fill();
+    p.font="20px Arial";
+    p.fillStyle="#333366";
+    p.fillText("🍒",10,25);
+  }
+
+  document.addEventListener("keydown", e => {
+    if (!pin.classList) return;
+    if (e.key === "ArrowLeft") leftFlip = true;
+    if (e.key === "ArrowRight") rightFlip = true;
+    if (["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key)
+        && current === "pinball") e.preventDefault();
+    if (current === "snake") {
+      if (e.key === "ArrowUp") turn(0,-1);
+      if (e.key === "ArrowDown") turn(0,1);
+      if (e.key === "ArrowLeft") turn(-1,0);
+      if (e.key === "ArrowRight") turn(1,0);
+    }
+    drawPinball();
+  });
+
+  document.addEventListener("keyup", e => {
+    if (e.key === "ArrowLeft") leftFlip = false;
+    if (e.key === "ArrowRight") rightFlip = false;
+    drawPinball();
+  });
+
+  pin.addEventListener("click", () => {
+    if (!pinTimer) window.wolStartPinball();
+  });
+
+  function resetSnake() {
+    clearInterval(snakeTimer);
+    snakeTimer = null;
+    snake = [{x:10,y:10},{x:9,y:10},{x:8,y:10}];
+    direction = {x:1,y:0};
+    snakeScore = 0;
+    placeFood();
+    $("wol-snake-score").textContent = "Scoops: 0";
+    drawSnake();
+  }
+
+  function placeFood() {
+    food = {x:Math.floor(Math.random()*20),y:Math.floor(Math.random()*20)};
+  }
+
+  function turn(x,y) {
+    if (x !== -direction.x || y !== -direction.y) direction={x,y};
+  }
+
+  function drawSnake() {
+    s.fillStyle="#f4faff";
+    s.fillRect(0,0,400,400);
+    snake.forEach((part,i) => {
+      s.fillStyle = i===0 ? "#ff477e" : "#005696";
+      s.fillRect(part.x*20+2,part.y*20+2,16,16);
+    });
+    s.font="18px Arial";
+    s.fillText("🍦",food.x*20,food.y*20+18);
+  }
+
+  window.wolStartSnake = function () {
+    resetSnake();
+    snakeTimer = setInterval(() => {
+      const head={x:snake[0].x+direction.x,y:snake[0].y+direction.y};
+      if (head.x<0||head.y<0||head.x>=20||head.y>=20||
+          snake.some(part=>part.x===head.x&&part.y===head.y)) {
+        clearInterval(snakeTimer);
+        snakeTimer=null;
+        return;
+      }
+      snake.unshift(head);
+      if (head.x===food.x&&head.y===food.y) {
+        snakeScore++;
+        $("wol-snake-score").textContent="Scoops: "+snakeScore;
+        placeFood();
+      } else snake.pop();
+      drawSnake();
+    },150);
+  };
+
+  resetPinball();
+  resetSnake();
+  window.wolShowGame("pinball");
 })();
 </script>
 </body>
