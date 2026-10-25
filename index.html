@@ -351,12 +351,29 @@
         }
       });
 
-      if (ball.y > 350 && ball.y < 405 && ball.vy > 0) {
-        if (ball.x > 95 && ball.x < 195 && leftFlip) {
-          ball.vy = -Math.random()*6-5;
-          ball.vx = -2 + Math.random()*5;
-          pinScore++;
-        }
+      if (ball.y > 350 && ball.y < 410 && ball.vy > 0) {
+  // Left flipper: gentle bounce by default, powerful when pressed
+  if (ball.x > 75 && ball.x < 215) {
+    ball.vy = leftFlip ? -11 - Math.random() * 4 : -2.5;
+    ball.vx = leftFlip
+      ? (Math.random() - 0.5) * 7
+      : (ball.x < 145 ? -1.5 : 1.5);
+    ball.y = 349;
+    if (leftFlip) pinScore += 2;
+  }
+
+  // Right flipper
+  else if (ball.x > 225 && ball.x < 365) {
+    ball.vy = rightFlip ? -11 - Math.random() * 4 : -2.5;
+    ball.vx = rightFlip
+      ? (Math.random() - 0.5) * 7
+      : (ball.x < 295 ? -1.5 : 1.5);
+    ball.y = 349;
+    if (rightFlip) pinScore += 2;
+  }
+
+  $("wol-pin-score").textContent = "Score: " + pinScore;
+}
         if (ball.x > 245 && ball.x < 345 && rightFlip) {
           ball.vy = -Math.random()*6-5;
           ball.vx = -2 + Math.random()*5;
@@ -392,14 +409,14 @@
     p.translate(145,386);
     p.rotate(leftFlip ? -.45 : .15);
     p.fillStyle="#ff477e";
-    p.fillRect(-45,-6,90,12);
+    p.fillRect(-60,-9,120,18);
     p.restore();
 
     p.save();
     p.translate(295,386);
     p.rotate(rightFlip ? .45 : -.15);
     p.fillStyle="#ff477e";
-    p.fillRect(-45,-6,90,12);
+	p.fillRect(-60,-9,120,18);
     p.restore();
 
     p.beginPath();
