@@ -374,14 +374,12 @@
 
   $("wol-pin-score").textContent = "Score: " + pinScore;
 }
-        $("wol-pin-score").textContent = "Score: " + pinScore;
-      }
 
-      if (ball.y > 440) {
-        clearInterval(pinTimer);
-        pinTimer = null;
-      }
-      drawPinball();
+if (ball.y > 440) {
+  clearInterval(pinTimer);
+  pinTimer = null;
+}
+drawPinball();
     }, 25);
   };
 
