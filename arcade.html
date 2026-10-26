@@ -98,6 +98,20 @@
   ">
     💣 UNLEASH THE SCOOPS!
   </button>
+		<button id="ice-cream-mega-button" style="
+  margin: 10px;
+  padding: 16px 26px;
+  border: 3px solid white;
+  border-radius: 14px;
+  background: #333366;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 0 18px #ffffff88;
+">
+  🌋 MEGA EXPLOSION — 300 TREATS!
+</button>
 
   <div id="ice-cream-explosion-status" aria-live="polite">
     Ready for maximum deliciousness.
@@ -379,6 +393,7 @@ drawPinball();
 	// 🍦 ICE CREAM EXPLOSION 💥
 (function () {
   const button = document.getElementById("ice-cream-explode-button");
+	const megaButton = document.getElementById("ice-cream-mega-button");
   const status = document.getElementById("ice-cream-explosion-status");
 
   if (!button || !status) return;
@@ -386,10 +401,11 @@ drawPinball();
   const treats = ["🍦", "🍨", "🍒", "🍬", "🍭", "🍫", "🌈", "✨", "🍓", "🩷"];
   let exploding = false;
 
-  button.addEventListener("click", function () {
+  function launchExplosion(treatCount) {
     if (exploding) return;
     exploding = true;
     button.disabled = true;
+megaButton.disabled = true;
     status.textContent = "💥 ICE CREAM OVERLOAD!!! 💥";
 
     const burst = document.createElement("div");
@@ -402,7 +418,7 @@ drawPinball();
     `;
     document.body.appendChild(burst);
 
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < treatCount; i++) {
       const piece = document.createElement("span");
       piece.textContent = treats[Math.floor(Math.random() * treats.length)];
 
@@ -429,6 +445,7 @@ drawPinball();
       burst.remove();
       status.textContent = "Explosion complete. Deliciousness restored. 🍦";
       button.disabled = false;
+megaButton.disabled = false;
       exploding = false;
     }, 3200);
   });
@@ -452,7 +469,15 @@ drawPinball();
       }
     }
   `;
-  document.head.appendChild(style);
+    document.head.appendChild(style);
+
+  button.addEventListener("click", function () {
+    launchExplosion(100);
+  });
+
+  megaButton.addEventListener("click", function () {
+    launchExplosion(500);
+  });
 })();
 </script>
 <!-- END WALK OF LIFE ARCADE -->
