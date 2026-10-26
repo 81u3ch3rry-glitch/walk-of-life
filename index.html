@@ -403,7 +403,7 @@ if (bumperHits >= 5 && !sweetMode) {
   $("wol-pin-score").textContent = "Score: " + pinScore;
 }
 
-if (ball.y > 440) {
+if (ball.y > 440 && !sweetMode) {
   clearInterval(pinTimer);
   pinTimer = null;
 }
