@@ -91,7 +91,7 @@
         <div class="control">⏮</div><div class="control main">⏸</div><div class="control">⏭</div>
       </div>
     </div>
-    <aside class="daily-card">
+	<aside class="daily-card" id="dailyCard" role="button" tabindex="0" title="Secret menu">
       <div class="eyebrow">TODAY AT WALK OF LIFE</div>
       <h2 id="dailyTitle">Food Truck Saturday</h2>
       <p id="dailyDescription">Food trucks, music, and family fun in the park.</p>
@@ -117,13 +117,13 @@
   // Weekly events and short descriptions, based on the Walk Of Life book.
   // JavaScript day numbers: Sunday = 0, Monday = 1, ... Saturday = 6.
   const dailyEvents = [
-    { title: "Sunday — Ice Cream Night", description: "Enjoy frozen custard, music, and time together to make happy memories." },
+    { title: "Sunday — Ice Cream Night", description: "Enjoy frozen custard, music, and a great night sky to make happy memories." },
     { title: "Monday — Milkshake Monday", description: "Celebrate Monday with delicious milkshakes and the fun that starts a new week." },
     { title: "Tuesday — Create-A-Custard Day", description: "Customers use their imagination to create their own custard ideas." },
     { title: "Wednesday — Classic Rock Trivia Night", description: "Test your classic rock knowledge at free trivia night, starting at 7 PM." },
     { title: "Thursday — Sundae Day", description: "Enjoy special sundaes, try tasty toppings, and take on the giant sundae challenge." },
     { title: "Friday — Funday", description: "Come celebrate Friday with discounts, crowds, and fun for everyone." },
-    { title: "Saturday — Food Truck Saturday", description: "Visit the nearby park for food trucks, music, and family fun." }
+    { title: "Saturday — Food Truck Day", description: "Visit the nearby park for food trucks, music, and family fun." }
   ];
   const todayEvent = dailyEvents[new Date().getDay()];
   document.getElementById("dailyTitle").textContent = todayEvent.title;
@@ -379,9 +379,12 @@ if (bumperHits >= 5 && !sweetMode) {
         }
       });
 
-      if (ball.y > 350 && ball.y < 410 && ball.vy > 0) {
-  // Left flipper: gentle bounce by default, powerful when pressed
-  if (ball.x > 75 && ball.x < 215) {
+
+if (ball.y > 350 && ball.y < 410 && ball.vy > 0) {
+  const paddleSize = sweetMode ? 45 : 0;
+
+  // Left flipper
+  if (ball.x > 75 - paddleSize && ball.x < 215 + paddleSize) {
     ball.vy = leftFlip ? -11 - Math.random() * 4 : -2.5;
     ball.vx = leftFlip
       ? (Math.random() - 0.5) * 7
@@ -391,7 +394,7 @@ if (bumperHits >= 5 && !sweetMode) {
   }
 
   // Right flipper
-  else if (ball.x > 225 && ball.x < 365) {
+  else if (ball.x > 225 - paddleSize && ball.x < 365 + paddleSize) {
     ball.vy = rightFlip ? -11 - Math.random() * 4 : -2.5;
     ball.vx = rightFlip
       ? (Math.random() - 0.5) * 7
@@ -399,6 +402,7 @@ if (bumperHits >= 5 && !sweetMode) {
     ball.y = 349;
     if (rightFlip) pinScore += 2;
   }
+}
 
   $("wol-pin-score").textContent = "Score: " + pinScore;
 }
