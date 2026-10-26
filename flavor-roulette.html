@@ -1,0 +1,302 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flavor Roulette 🍦 | Walk Of Life</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      color: #333366;
+      background: linear-gradient(135deg, #fff0f5, #fff5d7, #e5f5ff);
+    }
+
+    .page {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: clamp(30px, 7vw, 48px);
+      margin: 18px 0 8px;
+    }
+
+    .subtitle {
+      font-size: 18px;
+      line-height: 1.5;
+    }
+
+    .wheel-area {
+      position: relative;
+      width: min(88vw, 460px);
+      margin: 28px auto 20px;
+    }
+
+    #wheel {
+      display: block;
+      width: 100%;
+      height: auto;
+      filter: drop-shadow(0 8px 12px #33336630);
+    }
+
+    .pointer {
+      position: absolute;
+      z-index: 2;
+      top: -13px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 19px solid transparent;
+      border-right: 19px solid transparent;
+      border-top: 39px solid #333366;
+      filter: drop-shadow(0 2px 2px #0004);
+    }
+
+    button {
+      border: 3px solid white;
+      border-radius: 15px;
+      padding: 15px 24px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.15s, filter 0.15s;
+    }
+
+    button:hover {
+      transform: scale(1.04);
+      filter: brightness(1.05);
+    }
+
+    button:disabled {
+      cursor: wait;
+      opacity: 0.75;
+    }
+
+    #spin-button {
+      color: white;
+      background: linear-gradient(135deg, #ff477e, #8e6cff);
+      box-shadow: 0 5px 14px #33336630;
+    }
+
+    #result {
+      min-height: 90px;
+      margin: 22px auto;
+      padding: 18px;
+      max-width: 550px;
+      border-radius: 18px;
+      background: white;
+      box-shadow: 0 4px 14px #33336618;
+    }
+
+    #flavor-name {
+      font-size: 28px;
+      font-weight: bold;
+      color: #ff477e;
+      margin: 8px 0;
+    }
+
+    .back-button {
+      margin-top: 12px;
+      background: #005696;
+      color: white;
+    }
+
+    .flavor-list {
+      margin: 25px auto;
+      padding: 18px;
+      max-width: 550px;
+      border-radius: 16px;
+      background: #ffffffb8;
+      line-height: 1.8;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      button {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+    <h1>🎡 Flavor Roulette 🍦</h1>
+
+    <p class="subtitle">
+      Feeling lucky? Spin the wheel and discover your next delicious flavor!
+    </p>
+
+    <div class="wheel-area">
+      <div class="pointer" aria-hidden="true"></div>
+      <canvas id="wheel" width="600" height="600"
+        aria-label="A colorful wheel of ice cream flavors"></canvas>
+    </div>
+
+    <button id="spin-button">🎡 SPIN THE WHEEL!</button>
+
+    <section id="result" aria-live="polite">
+      <div>Today's flavor adventure awaits!</div>
+      <div id="flavor-name">Ready to spin? 🍦</div>
+    </section>
+
+    <div class="flavor-list">
+      <strong>🍨 On the wheel:</strong>
+      <div id="flavor-list"></div>
+    </div>
+
+    <button class="back-button"
+      onclick="window.location.href='arcade.html'">
+      🎮 Back to the Arcade
+    </button>
+
+    <button class="back-button"
+      onclick="window.location.href='index.html'">
+      🎵 Back to Music Player
+    </button>
+  </main>
+
+  <script>
+    (function () {
+      const flavors = [
+        "Vanilla",
+        "Chocolate",
+        "Strawberry",
+        "Cookies & Cream",
+        "Mint Chocolate Chip",
+        "Cookie Dough",
+        "Chocolate Chip",
+        "Rocky Road",
+        "Butter Pecan",
+        "Cookie Monster",
+        "Birthday Cake",
+        "Chocolate Fudge",
+        "Salted Caramel",
+        "Pistachio",
+        "Coffee",
+        "Neapolitan"
+      ];
+
+      const colors = [
+        "#ff9fba", "#8e6cff", "#ff477e", "#65c8ff",
+        "#71d6a3", "#ffc857", "#a56b46", "#b8a1ff",
+        "#f2c078", "#4d9de0", "#ffcf70", "#6d4c9a",
+        "#ff875e", "#86c98a", "#b68d40", "#ffb3d1"
+      ];
+
+      const canvas = document.getElementById("wheel");
+      const ctx = canvas.getContext("2d");
+      const spinButton = document.getElementById("spin-button");
+      const flavorName = document.getElementById("flavor-name");
+      const flavorList = document.getElementById("flavor-list");
+
+      const slice = (Math.PI * 2) / flavors.length;
+      let rotation = 0;
+      let spinning = false;
+
+      flavorList.textContent = flavors.join(" • ");
+
+      function drawWheel() {
+        const center = 300;
+        const radius = 285;
+
+        ctx.clearRect(0, 0, 600, 600);
+
+        flavors.forEach((flavor, i) => {
+          const start = rotation + i * slice - Math.PI / 2;
+          const end = start + slice;
+
+          ctx.beginPath();
+          ctx.moveTo(center, center);
+          ctx.arc(center, center, radius, start, end);
+          ctx.closePath();
+          ctx.fillStyle = colors[i % colors.length];
+          ctx.fill();
+
+          ctx.strokeStyle = "white";
+          ctx.lineWidth = 4;
+          ctx.stroke();
+
+          ctx.save();
+          ctx.translate(center, center);
+          ctx.rotate(start + slice / 2);
+          ctx.textAlign = "right";
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = "#333366";
+          ctx.font = "bold 15px Arial";
+          ctx.fillText(flavor, radius - 18, 0, 145);
+          ctx.restore();
+        });
+
+        ctx.beginPath();
+        ctx.arc(center, center, 39, 0, Math.PI * 2);
+        ctx.fillStyle = "white";
+        ctx.fill();
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "#333366";
+        ctx.stroke();
+
+        ctx.font = "30px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("🍦", center, center);
+      }
+
+      function spinWheel() {
+        if (spinning) return;
+
+        spinning = true;
+        spinButton.disabled = true;
+        flavorName.textContent = "The wheel is spinning... 🎡";
+
+        const startRotation = rotation;
+        const extraRotation = (5 + Math.random() * 5) * Math.PI * 2;
+        const randomOffset = Math.random() * Math.PI * 2;
+        const targetRotation = startRotation + extraRotation + randomOffset;
+        const startTime = performance.now();
+        const duration = 4200;
+
+        function animate(now) {
+          const progress = Math.min((now - startTime) / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 4);
+
+          rotation = startRotation +
+            (targetRotation - startRotation) * eased;
+
+          drawWheel();
+
+          if (progress < 1) {
+            requestAnimationFrame(animate);
+          } else {
+            rotation = targetRotation % (Math.PI * 2);
+            drawWheel();
+
+            const pointerAngle = (Math.PI * 1.5 - rotation + Math.PI * 2)
+              % (Math.PI * 2);
+            const winner = Math.floor(pointerAngle / slice) % flavors.length;
+
+            flavorName.textContent = "🍦 " + flavors[winner] + "!";
+            spinning = false;
+            spinButton.disabled = false;
+          }
+        }
+
+        requestAnimationFrame(animate);
+      }
+
+      spinButton.addEventListener("click", spinWheel);
+      drawWheel();
+    })();
+  </script>
+</body>
+</html>
