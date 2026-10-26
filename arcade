@@ -1,0 +1,74 @@
+<!-- WALK OF LIFE ARCADE -->
+<style>
+  #wol-arcade {
+    margin: 30px auto;
+    padding: 24px;
+    max-width: 700px;
+    box-sizing: border-box;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #005696, #333366);
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
+
+  #wol-arcade button {
+    margin: 6px;
+    padding: 12px 18px;
+    border: 0;
+    border-radius: 10px;
+    background: white;
+    color: #333366;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  #wol-arcade button:hover {
+    transform: scale(1.04);
+  }
+
+  #wol-arcade canvas {
+    display: block;
+    width: 100%;
+    max-width: 440px;
+    height: auto;
+    margin: 16px auto;
+    border: 3px solid white;
+    border-radius: 12px;
+    background: #f4faff;
+    touch-action: none;
+  }
+
+  #wol-arcade .wol-game {
+    display: none;
+  }
+
+  #wol-arcade .wol-game.active {
+    display: block;
+  }
+</style>
+
+<section id="wol-arcade">
+  <h2>🍦 Walk Of Life Arcade 🎮</h2>
+  <p>Choose your game!</p>
+
+  <button onclick="wolShowGame('pinball')">🍒 Sundae Pinball</button>
+  <button onclick="wolShowGame('snake')">🐍 Ice Cream Snake</button>
+
+  <div id="wol-pinball" class="wol-game">
+    <h3>🍒 Sundae Pinball</h3>
+    <p>Use the left and right arrow keys to flip!</p>
+    <canvas id="wol-pin-canvas" width="440" height="440"></canvas>
+    <button onclick="wolStartPinball()">Start / Restart</button>
+    <p id="wol-pin-score">Score: 0</p>
+  </div>
+
+  <div id="wol-snake" class="wol-game">
+    <h3>🐍 Ice Cream Snake</h3>
+    <p>Collect scoops with the arrow keys!</p>
+    <canvas id="wol-snake-canvas" width="400" height="400"></canvas>
+    <button onclick="wolStartSnake()">Start / Restart</button>
+    <p id="wol-snake-score">Scoops: 0</p>
+  </div>
+</section>
+<!-- END WALK OF LIFE ARCADE -->
