@@ -69,6 +69,40 @@
   🎵 Back to Music Player
 </button>
   <h2>🍦 Walk Of Life Arcade 🎮</h2>
+	<div id="ice-cream-explosion" style="
+  margin: 20px auto;
+  padding: 22px;
+  max-width: 650px;
+  background: linear-gradient(135deg, #ff477e, #ff9f43, #8e6cff);
+  border-radius: 18px;
+  color: white;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  box-sizing: border-box;
+">
+  <h3 style="font-size: 28px; margin: 0 0 10px;">
+    💥 Ice Cream Explosion! 🍦
+  </h3>
+
+  <p>Warning: dangerously high levels of deliciousness.</p>
+
+  <button id="ice-cream-explode-button" style="
+    padding: 14px 24px;
+    border: 3px solid white;
+    border-radius: 14px;
+    background: #005696;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  ">
+    💣 UNLEASH THE SCOOPS!
+  </button>
+
+  <div id="ice-cream-explosion-status" aria-live="polite">
+    Ready for maximum deliciousness.
+  </div>
+</div>
   <p>Choose your game!</p>
 
   <button onclick="wolShowGame('pinball')">🍒 Sundae Pinball</button>
@@ -341,6 +375,84 @@ drawPinball();
     resetPinball();
   resetSnake();
   window.wolShowGame("pinball");
+})();
+	// 🍦 ICE CREAM EXPLOSION 💥
+(function () {
+  const button = document.getElementById("ice-cream-explode-button");
+  const status = document.getElementById("ice-cream-explosion-status");
+
+  if (!button || !status) return;
+
+  const treats = ["🍦", "🍨", "🍒", "🍬", "🍭", "🍫", "🌈", "✨", "🍓", "🩷"];
+  let exploding = false;
+
+  button.addEventListener("click", function () {
+    if (exploding) return;
+    exploding = true;
+    button.disabled = true;
+    status.textContent = "💥 ICE CREAM OVERLOAD!!! 💥";
+
+    const burst = document.createElement("div");
+    burst.style.cssText = `
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 99999;
+    `;
+    document.body.appendChild(burst);
+
+    for (let i = 0; i < 100; i++) {
+      const piece = document.createElement("span");
+      piece.textContent = treats[Math.floor(Math.random() * treats.length)];
+
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 150 + Math.random() * Math.max(innerWidth, innerHeight) * 0.7;
+      const spin = Math.random() * 1000 - 500;
+
+      piece.style.cssText = `
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        font-size: ${18 + Math.random() * 30}px;
+        transform: translate(-50%, -50%);
+        animation: iceCreamBlast ${1.2 + Math.random() * 1.8}s ease-out forwards;
+        --x: ${Math.cos(angle) * distance}px;
+        --y: ${Math.sin(angle) * distance}px;
+        --spin: ${spin}deg;
+      `;
+
+      burst.appendChild(piece);
+    }
+
+    setTimeout(() => {
+      burst.remove();
+      status.textContent = "Explosion complete. Deliciousness restored. 🍦";
+      button.disabled = false;
+      exploding = false;
+    }, 3200);
+  });
+
+  const style = document.createElement("style");
+  style.textContent = `
+    @keyframes iceCreamBlast {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.2) rotate(0deg);
+      }
+      15% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translate(
+          calc(-50% + var(--x)),
+          calc(-50% + var(--y))
+        ) scale(1.5) rotate(var(--spin));
+      }
+    }
+  `;
+  document.head.appendChild(style);
 })();
 </script>
 <!-- END WALK OF LIFE ARCADE -->
