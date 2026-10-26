@@ -132,10 +132,7 @@
 	const dailyCard = document.getElementById("dailyCard");
 
 function openArcadeFromBanner() {
-  document.getElementById("wol-arcade").scrollIntoView({
-    behavior: "smooth",
-    block: "start"
-  });
+  window.location.href = "arcade.html";
 }
 
 dailyCard.addEventListener("click", openArcadeFromBanner);
