@@ -340,9 +340,10 @@ bumperHits = 0;
     ball.vy = 3 + Math.random() * 2;
 
     pinTimer = setInterval(() => {
-      ball.x += ball.vx * speedMultiplier;
-	ball.y += ball.vy * speedMultiplier;
-	ball.vy += .12;
+      const frameSpeed = speedMultiplier;
+ball.x += ball.vx * frameSpeed;
+ball.y += ball.vy * frameSpeed;
+ball.vy += .12;
 
       if (ball.x < 12 || ball.x > 428) ball.vx *= -1;
       if (ball.y < 12) ball.vy = Math.abs(ball.vy);
