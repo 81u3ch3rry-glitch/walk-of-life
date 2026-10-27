@@ -786,6 +786,304 @@ megaButton.disabled = false;
 })();
 </script>
 <!-- END ICE CREAM MINESWEEPER -->
+
+<!-- WALK OF LIFE: SCOOP CATAPULT -->
+<div id="scoopCatapultGame" style="max-width:850px;margin:35px auto;padding:20px;background:linear-gradient(#b8efff,#fff2d7);border:4px solid #ff9ac2;border-radius:24px;font-family:Arial,sans-serif;text-align:center;color:#54364f;box-sizing:border-box;">
+  <h2 style="font-size:30px;margin:5px;">🚀 Scoop Catapult 🍦</h2>
+  <p>Launch your scoop, bounce off toppings, and fly as far as you can!</p>
+  <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;font-weight:bold;margin:12px;">
+    <span>📏 Distance: <span id="scDistance">0</span> m</span>
+    <span>🍒 Cherries: <span id="scCherries">0</span></span>
+    <span>🏆 Best: <span id="scBest">0</span> m</span>
+  </div>
+  <canvas id="scCanvas" width="800" height="410" aria-label="Scoop Catapult game. Aim and launch with the buttons below." style="display:block;width:100%;height:auto;border:3px solid white;border-radius:15px;background:#c8f2ff;box-sizing:border-box;touch-action:pan-y;"></canvas>
+  <p id="scMessage" aria-live="polite" style="font-weight:bold;min-height:24px;">Aim your catapult, then launch!</p>
+  <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:12px 0;">
+    <label style="font-weight:bold;">Aim
+      <input id="scAngle" type="range" min="20" max="75" value="48" style="vertical-align:middle;width:110px;">
+    </label>
+    <label style="font-weight:bold;">Power
+      <input id="scPower" type="range" min="12" max="24" value="19" style="vertical-align:middle;width:110px;">
+    </label>
+  </div>
+  <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;">
+    <button id="scLaunch" style="padding:12px 18px;border:0;border-radius:12px;background:#ff477e;color:white;font-size:17px;font-weight:bold;cursor:pointer;">🏹 LAUNCH!</button>
+    <button id="scGlide" style="padding:12px 15px;border:0;border-radius:12px;background:#8e6cff;color:white;font-size:15px;font-weight:bold;cursor:pointer;">🪽 Use Wings</button>
+    <button id="scRestart" style="padding:12px 15px;border:0;border-radius:12px;background:#35a9a1;color:white;font-size:15px;font-weight:bold;cursor:pointer;">🔄 Restart</button>
+  </div>
+  <p style="font-size:13px;">💡 Land on tiny log catapults to get flung again! Sprinkle pads bounce you, chocolate ramps speed you up, and cotton candy makes you float.</p>
+</div>
+
+<script>
+(function () {
+  const root = document.getElementById("scoopCatapultGame");
+  if (!root || root.dataset.ready) return;
+  root.dataset.ready = "yes";
+
+  const canvas = root.querySelector("#scCanvas");
+  const ctx = canvas.getContext("2d");
+  const angleInput = root.querySelector("#scAngle");
+  const powerInput = root.querySelector("#scPower");
+  const launchButton = root.querySelector("#scLaunch");
+  const wingButton = root.querySelector("#scGlide");
+  const restartButton = root.querySelector("#scRestart");
+  const distanceText = root.querySelector("#scDistance");
+  const cherryText = root.querySelector("#scCherries");
+  const bestText = root.querySelector("#scBest");
+  const message = root.querySelector("#scMessage");
+
+  let x, y, vx, vy, flying, launched, wingTime, cherries, distance, best;
+  let camera = 0, lastTime = 0, animation = 0, worldObjects = [];
+  const groundY = 330;
+  const scoopRadius = 15;
+  const W = canvas.width, H = canvas.height;
+
+  try {
+    best = Number(localStorage.getItem("wolScoopCatapultBest")) || 0;
+  } catch (e) { best = 0; }
+  bestText.textContent = best;
+
+  function makeWorld() {
+    worldObjects = [];
+    for (let i = 270; i < 9000; i += 280) {
+      const type = Math.floor(i / 280) % 4;
+      worldObjects.push({
+        x: i + (Math.sin(i) * 28),
+        y: type === 0 ? groundY - 9 : type === 1 ? groundY - 40 : groundY - 15,
+        w: type === 0 ? 65 : type === 1 ? 48 : 56,
+        h: type === 0 ? 18 : type === 1 ? 12 : 20,
+        type: type === 0 ? "log" : type === 1 ? "sprinkle" : type === 2 ? "chocolate" : "cotton",
+        used: false
+      });
+    }
+    for (let i = 350; i < 9000; i += 390) {
+      worldObjects.push({x:i+55,y:groundY-100-(i%3)*15,w:22,h:22,type:"cherry",used:false});
+    }
+  }
+
+  function reset() {
+    cancelAnimationFrame(animation);
+    x = 85; y = groundY - scoopRadius;
+    vx = 0; vy = 0;
+    flying = false; launched = false;
+    wingTime = 0; cherries = 0; distance = 0; camera = 0;
+    makeWorld();
+    distanceText.textContent = "0";
+    cherryText.textContent = "0";
+    message.textContent = "Aim your catapult, then launch!";
+    launchButton.disabled = false;
+    wingButton.disabled = true;
+    draw();
+  }
+
+  function launch() {
+    if (launched) return;
+    const angle = Number(angleInput.value) * Math.PI / 180;
+    const power = Number(powerInput.value);
+    vx = Math.cos(angle) * power;
+    vy = -Math.sin(angle) * power;
+    flying = true; launched = true;
+    wingTime = 0;
+    launchButton.disabled = true;
+    wingButton.disabled = false;
+    message.textContent = "FLY, LITTLE SCOOP! 🍦";
+    lastTime = 0;
+    animation = requestAnimationFrame(tick);
+  }
+
+  function useWings() {
+    if (!flying || wingTime > 0) return;
+    wingTime = 100;
+    vy = Math.min(vy, -5);
+    message.textContent = "🪽 WHIPPED CREAM WINGS! Glide!";
+    wingButton.disabled = true;
+  }
+
+  function tick(time) {
+    if (!flying) return;
+    const dt = Math.min((time - (lastTime || time)) / 16.67, 2);
+    lastTime = time;
+    const oldY = y;
+
+    x += vx * dt;
+    y += vy * dt;
+    vy += (wingTime > 0 ? 0.055 : 0.27) * dt;
+    if (wingTime > 0) {
+      wingTime -= dt;
+      vy = Math.min(vy, 2.4);
+    }
+
+    for (const o of worldObjects) {
+      if (o.used) continue;
+      const nearX = x + scoopRadius > o.x && x - scoopRadius < o.x + o.w;
+      const nearY = y + scoopRadius > o.y && y - scoopRadius < o.y + o.h;
+      if (!nearX || !nearY) continue;
+
+      if (o.type === "cherry") {
+        o.used = true;
+        cherries++;
+        cherryText.textContent = cherries;
+        vx += 0.9;
+        vy -= 1.3;
+        message.textContent = "🍒 Cherry boost! Extra speed!";
+      } else if (oldY + scoopRadius <= o.y + 8 && vy > 0) {
+        o.used = true;
+        y = o.y - scoopRadius;
+        if (o.type === "log") {
+          vx *= 1.14;
+          vy = -Math.max(11, Math.abs(vy) * 1.45);
+          message.textContent = "🪵 MINI LOG CATAPULT! FLING!";
+        } else if (o.type === "sprinkle") {
+          vy = -Math.max(12, Math.abs(vy) * 1.8);
+          message.textContent = "🌈 SPRINKLE TRAMPOLINE!";
+        } else if (o.type === "chocolate") {
+          vx *= 1.45;
+          vy = -Math.max(5, Math.abs(vy) * 0.6);
+          message.textContent = "🍫 CHOCOLATE RAMP BOOST!";
+        } else if (o.type === "cotton") {
+          wingTime = 85;
+          vy = -8;
+          message.textContent = "☁️ COTTON CANDY FLOAT!";
+        }
+      }
+    }
+
+    if (y > groundY - scoopRadius) {
+      y = groundY - scoopRadius;
+      if (Math.abs(vy) > 5 && x > 115) {
+        vy = -Math.abs(vy) * 0.48;
+        vx *= 0.86;
+        message.textContent = "🍦 BOUNCE! Keep flying!";
+      } else {
+        flying = false;
+        finish();
+      }
+    }
+
+    if (x < 0) { x = 0; vx = Math.abs(vx) * 0.6; }
+    if (y < 18) { y = 18; vy = Math.abs(vy) * 0.65; }
+
+    distance = Math.max(distance, Math.floor(Math.max(0, x - 85) / 10));
+    distanceText.textContent = distance;
+    camera = Math.max(0, x - 240);
+
+    draw();
+    if (flying) animation = requestAnimationFrame(tick);
+  }
+
+  function finish() {
+    flying = false;
+    wingButton.disabled = true;
+    launchButton.disabled = false;
+    if (distance > best) {
+      best = distance;
+      bestText.textContent = best;
+      try { localStorage.setItem("wolScoopCatapultBest", String(best)); } catch (e) {}
+      message.textContent = "🏆 NEW DISTANCE RECORD: " + distance + " m! Press Launch to try again.";
+    } else {
+      message.textContent = "SPLAT! 🍦 You flew " + distance + " m. Try again!";
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, "#9de5ff");
+    sky.addColorStop(1, "#fff1d2");
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+
+    // Clouds
+    ctx.fillStyle = "rgba(255,255,255,.85)";
+    for (let i = 0; i < 6; i++) {
+      let cx = ((i * 165 - camera * 0.22) % (W + 120) + W + 120) % (W + 120) - 30;
+      ctx.beginPath();
+      ctx.arc(cx, 65 + (i % 3) * 35, 22, 0, Math.PI * 2);
+      ctx.arc(cx + 25, 57 + (i % 3) * 35, 27, 0, Math.PI * 2);
+      ctx.arc(cx + 52, 68 + (i % 3) * 35, 19, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Rolling garden
+    ctx.fillStyle = "#79cf79";
+    ctx.fillRect(0, groundY, W, H - groundY);
+    ctx.fillStyle = "#42a95a";
+    ctx.fillRect(0, groundY, W, 9);
+
+    // Starting catapult
+    const startX = 85 - camera;
+    if (startX > -60 && startX < W + 60 && !launched) {
+      ctx.strokeStyle = "#79502e"; ctx.lineWidth = 10; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(startX - 23, groundY); ctx.lineTo(startX, groundY - 45); ctx.lineTo(startX + 28, groundY); ctx.stroke();
+      ctx.strokeStyle = "#b77b42"; ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.moveTo(startX, groundY - 45); ctx.lineTo(startX - 18, groundY - 80); ctx.stroke();
+      ctx.fillStyle = "#a66b36";
+      ctx.beginPath(); ctx.ellipse(startX - 19, groundY - 82, 22, 7, -0.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.arc(startX, groundY - 45, 7, 0, Math.PI * 2); ctx.fill();
+    }
+
+    for (const o of worldObjects) {
+      const ox = o.x - camera;
+      if (ox < -90 || ox > W + 90) continue;
+      if (o.type === "log") {
+        ctx.fillStyle = "#986034";
+        ctx.fillRect(ox, o.y, o.w, o.h);
+        ctx.fillStyle = "#c78b4c";
+        ctx.fillRect(ox + 3, o.y + 3, o.w - 6, o.h - 6);
+        ctx.fillStyle = "#754522";
+        ctx.beginPath(); ctx.ellipse(ox + o.w - 5, o.y + o.h/2, 5, o.h/2 - 2, 0, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = "#68401f"; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(ox + 5, o.y + o.h); ctx.lineTo(ox - 2, o.y + o.h + 8); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(ox + o.w - 8, o.y + o.h); ctx.lineTo(ox + o.w + 2, o.y + o.h + 8); ctx.stroke();
+      } else if (o.type === "sprinkle") {
+        ctx.fillStyle = "#ff80b5"; ctx.fillRect(ox, o.y, o.w, o.h);
+        ["#ffce4b","#63d6ff","#8e6cff","#51c878"].forEach((c,i) => {
+          ctx.strokeStyle = c; ctx.lineWidth = 4;
+          ctx.beginPath(); ctx.moveTo(ox + 5 + i*11, o.y + 2); ctx.lineTo(ox + 12 + i*11, o.y + 10); ctx.stroke();
+        });
+      } else if (o.type === "chocolate") {
+        ctx.fillStyle = "#784324"; ctx.beginPath();
+        ctx.moveTo(ox, o.y + o.h); ctx.lineTo(ox + o.w, o.y + 3); ctx.lineTo(ox + o.w, o.y + o.h); ctx.fill();
+        ctx.fillStyle = "#dba16b"; ctx.fillRect(ox + 5, o.y + o.h - 4, o.w - 10, 3);
+      } else if (o.type === "cotton") {
+        ctx.fillStyle = "#ffb5e3";
+        ctx.beginPath(); ctx.arc(ox + 10, o.y + 10, 12, 0, Math.PI*2); ctx.arc(ox + 23, o.y + 5, 12, 0, Math.PI*2); ctx.arc(ox + 34, o.y + 12, 12, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#fff"; ctx.font = "12px Arial"; ctx.fillText("☁", ox + 10, o.y + 14);
+      } else if (o.type === "cherry") {
+        if (!o.used) {
+          ctx.font = "25px Arial"; ctx.fillText("🍒", ox, o.y);
+        }
+      }
+    }
+
+    // Scoop character
+    const sx = x - camera, sy = y;
+    ctx.fillStyle = "#8b5b37";
+    ctx.beginPath(); ctx.moveTo(sx - 10, sy + 5); ctx.lineTo(sx + 12, sy + 5); ctx.lineTo(sx + 8, sy + 23); ctx.lineTo(sx - 6, sy + 23); ctx.fill();
+    ctx.fillStyle = "#f5a6cf";
+    ctx.beginPath(); ctx.arc(sx, sy - 4, scoopRadius, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#ffdbed";
+    ctx.beginPath(); ctx.arc(sx - 5, sy - 10, 6, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#422a39";
+    ctx.beginPath(); ctx.arc(sx - 5, sy - 4, 2, 0, Math.PI*2); ctx.arc(sx + 5, sy - 4, 2, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "#422a39"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(sx, sy + 1, 5, 0.2, Math.PI - 0.2); ctx.stroke();
+
+    if (!launched) {
+      ctx.fillStyle = "#3b5363"; ctx.font = "bold 15px Arial";
+      ctx.fillText("Adjust aim + power!", 15, 25);
+    }
+  }
+
+  launchButton.addEventListener("click", launch);
+  wingButton.addEventListener("click", useWings);
+  restartButton.addEventListener("click", reset);
+  angleInput.addEventListener("input", () => { if (!launched) draw(); });
+  powerInput.addEventListener("input", () => { if (!launched) draw(); });
+  reset();
+})();
+</script>
+<!-- END SCOOP CATAPULT -->
 <!-- END WALK OF LIFE ARCADE -->
 </body>
 </html>
