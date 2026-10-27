@@ -133,6 +133,55 @@
   outline-offset: 3px;
 }
 
+
+/* Ice Cream Mode OFF: clean, expanded music-player layout */
+body.no-ice-cream-mode {
+  background: #080909;
+  color: #fffdd0;
+}
+body.no-ice-cream-mode .daily-card,
+body.no-ice-cream-mode .player-bottom {
+  display: none !important;
+}
+body.no-ice-cream-mode .player-top {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 70px 5%;
+}
+body.no-ice-cream-mode .top-grid {
+  width: 100%;
+  max-width: 1600px;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 2fr);
+  align-items: center;
+  gap: clamp(24px, 5vw, 80px);
+}
+body.no-ice-cream-mode .album-wrap {
+  justify-content: center;
+}
+body.no-ice-cream-mode .album-cover {
+  width: min(100%, 340px);
+}
+body.no-ice-cream-mode .song-title {
+  max-width: 900px;
+  font-size: clamp(32px, 5vw, 64px);
+}
+body.no-ice-cream-mode .progress-track {
+  max-width: 900px;
+}
+@media (max-width: 700px) {
+  body.no-ice-cream-mode .player-top {
+    padding: 76px 20px 32px;
+  }
+  body.no-ice-cream-mode .top-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  body.no-ice-cream-mode .album-cover {
+    width: min(70vw, 250px);
+  }
+}
+
 </style>
 </head>
 <body>
@@ -295,5 +344,71 @@ dailyCard.addEventListener("keydown", function(event) {
   });
 })();
 </script>
+
+<script>
+(() => {
+  const toggle = document.getElementById("iceCreamModeToggle");
+  if (!toggle) return;
+  const storageKey = "walkOfLifeIceCreamMode";
+
+  function applyIceCreamMode(enabled) {
+    document.body.classList.toggle("no-ice-cream-mode", !enabled);
+    toggle.checked = enabled;
+    try { localStorage.setItem(storageKey, enabled ? "on" : "off"); } catch (error) {}
+  }
+
+  let saved = null;
+  try { saved = localStorage.getItem(storageKey); } catch (error) {}
+  applyIceCreamMode(saved === null ? true : saved === "on");
+  toggle.addEventListener("change", () => applyIceCreamMode(toggle.checked));
+})();
+</script>
+
+<style>
+/* Decorative music bars stay visible in both modes */
+.decorative-equalizer {
+  position: fixed;
+  left: 18px;
+  bottom: 0;
+  z-index: 1000;
+  height: 92px;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  pointer-events: none;
+  opacity: .92;
+}
+.decorative-equalizer span {
+  display: block;
+  width: 6px;
+  height: 20%;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(to top, #2878c8, #7652c8);
+  box-shadow: 0 0 7px rgba(118, 82, 200, .3);
+  transition: height 220ms ease;
+}
+@media (max-width: 600px) {
+  .decorative-equalizer { left: 8px; height: 62px; gap: 3px; }
+  .decorative-equalizer span { width: 4px; }
+}
+</style>
+<div class="decorative-equalizer" aria-hidden="true" id="decorativeEqualizer">
+  <span></span><span></span><span></span><span></span><span></span><span></span>
+  <span></span><span></span><span></span><span></span><span></span><span></span>
+  <span></span><span></span><span></span><span></span><span></span><span></span>
+</div>
+<script>
+(() => {
+  const bars = document.querySelectorAll('#decorativeEqualizer span');
+  function moveBars() {
+    bars.forEach((bar) => {
+      bar.style.height = (12 + Math.random() * 88) + '%';
+    });
+    window.setTimeout(moveBars, 160 + Math.random() * 420);
+  }
+  moveBars();
+})();
+</script>
+
 </body>
 </html>
