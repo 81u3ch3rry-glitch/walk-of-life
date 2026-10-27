@@ -615,6 +615,177 @@ megaButton.disabled = false;
 })();
 </script>
 <!-- END ICE CREAM MEMORY GAME -->
+
+<!-- ICE CREAM MINESWEEPER -->
+<div id="iceCreamMinesweeper" style="max-width:650px;margin:35px auto;padding:24px;background:linear-gradient(135deg,#e5f7ff,#fff0f6);border:4px solid #83d8f8;border-radius:24px;text-align:center;font-family:Arial,sans-serif;color:#30445c;">
+  <h2 style="font-size:30px;margin:0 0 8px;">🍦 Ice Cream Minesweeper 💣</h2>
+  <p>Find the safe treats! Avoid the spoiled scoops and flag them with 🍒.</p>
+
+  <div style="margin:14px;">
+    <label for="mineDifficulty"><b>Difficulty:</b></label>
+    <select id="mineDifficulty" style="padding:8px;border-radius:8px;">
+      <option value="easy">Easy · 8 × 8 · 10 spoiled scoops</option>
+      <option value="medium">Medium · 10 × 10 · 18 spoiled scoops</option>
+      <option value="hard">Hard · 12 × 12 · 30 spoiled scoops</option>
+    </select>
+    <button id="mineNewGame" style="padding:9px 14px;border:0;border-radius:9px;background:#ff477e;color:white;font-weight:bold;cursor:pointer;">New Game</button>
+  </div>
+
+  <p id="mineStatus" aria-live="polite" style="font-weight:bold;">Ready to play!</p>
+  <p style="font-size:13px;">Tap a tile to uncover it. Use Flag Mode to mark a suspected spoiled scoop.</p>
+  <button id="mineFlagMode" aria-pressed="false" style="padding:9px 14px;border:2px solid #83d8f8;border-radius:9px;background:white;cursor:pointer;">🚩 Flag Mode: OFF</button>
+  <div id="mineBoard" style="display:grid;gap:3px;margin:18px auto;max-width:480px;touch-action:manipulation;"></div>
+</div>
+
+<script>
+(function () {
+  const root = document.getElementById("iceCreamMinesweeper");
+  if (!root || root.dataset.ready) return;
+  root.dataset.ready = "yes";
+
+  const boardEl = root.querySelector("#mineBoard");
+  const statusEl = root.querySelector("#mineStatus");
+  const difficulty = root.querySelector("#mineDifficulty");
+  const flagButton = root.querySelector("#mineFlagMode");
+  const newButton = root.querySelector("#mineNewGame");
+
+  let size, mineCount, cells, over, flagMode, firstMove;
+
+  function startGame() {
+    size = difficulty.value === "easy" ? 8 : difficulty.value === "medium" ? 10 : 12;
+    mineCount = difficulty.value === "easy" ? 10 : difficulty.value === "medium" ? 18 : 30;
+    cells = Array.from({ length: size * size }, () => ({
+      mine: false, open: false, flagged: false, count: 0, button: null
+    }));
+    over = false;
+    flagMode = false;
+    firstMove = true;
+    flagButton.textContent = "🚩 Flag Mode: OFF";
+    flagButton.setAttribute("aria-pressed", "false");
+    statusEl.textContent = "🍒 0 flags · Find all the safe tiles!";
+    boardEl.innerHTML = "";
+    boardEl.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
+
+    cells.forEach((cell, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = "❔";
+      button.setAttribute("aria-label", "Hidden tile");
+      button.style.cssText = "aspect-ratio:1;min-width:0;padding:0;border:1px solid #9bcfe0;border-radius:5px;background:#ffffff;font-size:clamp(12px,2.5vw,23px);cursor:pointer;";
+      button.addEventListener("click", () => handleClick(index));
+      cell.button = button;
+      boardEl.appendChild(button);
+    });
+  }
+
+  function neighbors(index) {
+    const result = [];
+    const row = Math.floor(index / size);
+    const col = index % size;
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if (!dr && !dc) continue;
+        const r = row + dr, c = col + dc;
+        if (r >= 0 && r < size && c >= 0 && c < size) result.push(r * size + c);
+      }
+    }
+    return result;
+  }
+
+  function placeMines(safeIndex) {
+    const choices = cells.map((_, i) => i).filter(i => i !== safeIndex);
+    for (let i = choices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [choices[i], choices[j]] = [choices[j], choices[i]];
+    }
+    choices.slice(0, mineCount).forEach(i => cells[i].mine = true);
+    cells.forEach((cell, i) => {
+      cell.count = neighbors(i).filter(n => cells[n].mine).length;
+    });
+    firstMove = false;
+  }
+
+  function updateStatus() {
+    const flags = cells.filter(c => c.flagged).length;
+    statusEl.textContent = `🍒 ${flags}/${mineCount} flags · ${cells.filter(c => c.open).length} tiles uncovered`;
+  }
+
+  function reveal(index) {
+    const cell = cells[index];
+    if (cell.open || cell.flagged || over) return;
+    cell.open = true;
+    cell.button.disabled = true;
+    cell.button.style.cursor = "default";
+    cell.button.style.background = "#edf8fb";
+    cell.button.style.borderColor = "#d0e6ec";
+
+    if (cell.mine) {
+      cell.button.textContent = "💣";
+      cell.button.style.background = "#ffb4b4";
+      over = true;
+      cells.forEach(c => {
+        if (c.mine) {
+          c.button.textContent = "💣";
+          c.button.style.background = "#ffb4b4";
+        }
+        c.button.disabled = true;
+      });
+      statusEl.textContent = "💥 Oh no! A spoiled scoop! Press New Game to try again.";
+      return;
+    }
+
+    cell.button.textContent = cell.count ? String(cell.count) : "🍦";
+    const numberColors = ["", "#247b46", "#2672c9", "#d34b4b", "#7952a3", "#b35a24", "#168a91", "#333333", "#777777"];
+    if (cell.count) {
+      cell.button.style.color = numberColors[cell.count];
+      cell.button.style.fontWeight = "bold";
+    }
+
+    if (cell.count === 0) {
+      neighbors(index).forEach(n => reveal(n));
+    }
+
+    if (cells.every(c => c.mine || c.open)) {
+      over = true;
+      cells.forEach(c => c.button.disabled = true);
+      statusEl.textContent = "🏆 Sweet victory! You found every safe treat!";
+    } else {
+      updateStatus();
+    }
+  }
+
+  function handleClick(index) {
+    if (over) return;
+    const cell = cells[index];
+    if (cell.open) return;
+
+    if (flagMode) {
+      cell.flagged = !cell.flagged;
+      cell.button.textContent = cell.flagged ? "🍒" : "❔";
+      cell.button.setAttribute("aria-label", cell.flagged ? "Flagged tile" : "Hidden tile");
+      cell.button.style.background = cell.flagged ? "#ffe0ed" : "#ffffff";
+      updateStatus();
+      return;
+    }
+
+    if (cell.flagged) return;
+    if (firstMove) placeMines(index);
+    reveal(index);
+  }
+
+  flagButton.addEventListener("click", () => {
+    if (over) return;
+    flagMode = !flagMode;
+    flagButton.textContent = `🚩 Flag Mode: ${flagMode ? "ON" : "OFF"}`;
+    flagButton.setAttribute("aria-pressed", String(flagMode));
+  });
+
+  newButton.addEventListener("click", startGame);
+  difficulty.addEventListener("change", startGame);
+  startGame();
+})();
+</script>
+<!-- END ICE CREAM MINESWEEPER -->
 <!-- END WALK OF LIFE ARCADE -->
 </body>
 </html>
