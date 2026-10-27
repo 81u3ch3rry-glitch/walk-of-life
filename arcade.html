@@ -498,6 +498,123 @@ megaButton.disabled = false;
     🎡🍦 PLAY FLAVOR ROULETTE! 🍦🎡
   </button>
 </div>
+	
+<!-- ICE CREAM MEMORY GAME -->
+<div id="iceCreamMemory" style="max-width:800px;margin:35px auto;padding:24px;background:linear-gradient(135deg,#fff0f6,#e8f7ff);border:4px solid #ff80ab;border-radius:24px;text-align:center;color:#58344c;font-family:Arial,sans-serif;">
+  <h2 style="font-size:30px;margin:0 0 8px;">🍦 Ice Cream Memory 🧠</h2>
+  <p>Find all the matching pairs of delicious treats!</p>
+
+  <div style="display:flex;justify-content:center;gap:24px;flex-wrap:wrap;font-weight:bold;margin:16px 0;">
+    <span>Moves: <span id="memoryMoves">0</span></span>
+    <span>Pairs: <span id="memoryPairs">0</span>/8</span>
+  </div>
+
+  <div id="memoryBoard" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;max-width:520px;margin:20px auto;"></div>
+
+  <p id="memoryMessage" aria-live="polite" style="font-weight:bold;min-height:24px;">Ready, set, scoop!</p>
+
+  <button onclick="startIceCreamMemory()" style="padding:12px 22px;border:0;border-radius:12px;background:#ff477e;color:white;font-size:17px;font-weight:bold;cursor:pointer;">🔄 New Game</button>
+</div>
+
+<script>
+(function () {
+  const treats = ["🍦","🍨","🍧","🍒","🍫","🍪","🧁","🍓"];
+  let firstCard = null;
+  let locked = false;
+  let moves = 0;
+  let pairs = 0;
+  let matched = new Set();
+  let gameVersion = 0;
+
+  const board = document.getElementById("memoryBoard");
+  const movesDisplay = document.getElementById("memoryMoves");
+  const pairsDisplay = document.getElementById("memoryPairs");
+  const message = document.getElementById("memoryMessage");
+
+  window.startIceCreamMemory = function () {
+    gameVersion++;
+    firstCard = null;
+    locked = false;
+    moves = 0;
+    pairs = 0;
+    matched = new Set();
+    movesDisplay.textContent = "0";
+    pairsDisplay.textContent = "0";
+    message.textContent = "Find all 8 matching pairs!";
+    board.innerHTML = "";
+
+    const cards = [...treats, ...treats]
+      .map((treat, id) => ({ treat, id }))
+      .sort(() => Math.random() - 0.5);
+
+    cards.forEach(card => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = "❔";
+      button.dataset.treat = card.treat;
+      button.dataset.id = card.id;
+      button.setAttribute("aria-label", "Hidden treat");
+      button.style.cssText = "aspect-ratio:1;border:3px solid #ffb6d1;border-radius:14px;background:linear-gradient(135deg,#fff,#ffe1ed);font-size:clamp(24px,5vw,42px);cursor:pointer;box-shadow:0 3px 6px #00000012;";
+      button.addEventListener("click", () => flipCard(button));
+      board.appendChild(button);
+    });
+  };
+
+  function flipCard(button) {
+    if (locked || button.disabled || matched.has(button.dataset.treat) && false) return;
+    if (button.textContent !== "❔") return;
+
+    button.textContent = button.dataset.treat;
+    button.setAttribute("aria-label", button.dataset.treat);
+    button.style.background = "#ffffff";
+
+    if (!firstCard) {
+      firstCard = button;
+      return;
+    }
+
+    moves++;
+    movesDisplay.textContent = moves;
+
+    if (firstCard.dataset.treat === button.dataset.treat) {
+      matched.add(button.dataset.treat);
+      firstCard.disabled = true;
+      button.disabled = true;
+      firstCard.style.background = "#c9f7d5";
+      button.style.background = "#c9f7d5";
+      firstCard = null;
+      pairs++;
+      pairsDisplay.textContent = pairs;
+
+      if (pairs === treats.length) {
+        message.textContent = "🏆 You scooped up every pair in " + moves + " moves!";
+      } else {
+        message.textContent = "Yum! Match found! 🍒";
+      }
+    } else {
+      locked = true;
+      const oldFirst = firstCard;
+      firstCard = null;
+      message.textContent = "Not a match! Try again.";
+      const version = gameVersion;
+
+      setTimeout(() => {
+        if (version !== gameVersion) return;
+        oldFirst.textContent = "❔";
+        oldFirst.setAttribute("aria-label", "Hidden treat");
+        oldFirst.style.background = "linear-gradient(135deg,#fff,#ffe1ed)";
+        button.textContent = "❔";
+        button.setAttribute("aria-label", "Hidden treat");
+        button.style.background = "linear-gradient(135deg,#fff,#ffe1ed)";
+        locked = false;
+      }, 850);
+    }
+  }
+
+  startIceCreamMemory();
+})();
+</script>
+<!-- END ICE CREAM MEMORY GAME -->
 <!-- END WALK OF LIFE ARCADE -->
 </body>
 </html>
