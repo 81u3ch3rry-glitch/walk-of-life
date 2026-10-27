@@ -825,7 +825,6 @@ megaButton.disabled = false;
   const angleInput = root.querySelector("#scAngle");
   const powerInput = root.querySelector("#scPower");
   const launchButton = root.querySelector("#scLaunch");
-  const wingButton = root.querySelector("#scGlide");
   const restartButton = root.querySelector("#scRestart");
   const distanceText = root.querySelector("#scDistance");
   const cherryText = root.querySelector("#scCherries");
@@ -843,21 +842,49 @@ megaButton.disabled = false;
   } catch (e) { best = 0; }
   bestText.textContent = best;
 
+  
   function makeWorld() {
     worldObjects = [];
-    for (let i = 270; i < 9000; i += 280) {
-      const type = Math.floor(i / 280) % 4;
+    generatedUntil = 0;
+    extendWorld(1600);
+  }
+
+  let generatedUntil = 0;
+
+  function extendWorld(targetX) {
+    while (generatedUntil < targetX) {
+      const start = generatedUntil;
+      const segmentLength = 220 + Math.random() * 160;
+      const type = ["log", "sprinkle", "chocolate", "cotton"][
+        Math.floor(Math.random() * 4)
+      ];
+      const objectX = start + 100 + Math.random() * 100;
+
       worldObjects.push({
-        x: i + (Math.sin(i) * 28),
-        y: type === 0 ? groundY - 9 : type === 1 ? groundY - 40 : groundY - 15,
-        w: type === 0 ? 65 : type === 1 ? 48 : 56,
-        h: type === 0 ? 18 : type === 1 ? 12 : 20,
-        type: type === 0 ? "log" : type === 1 ? "sprinkle" : type === 2 ? "chocolate" : "cotton",
+        x: objectX,
+        y: type === "sprinkle"
+          ? groundY - 40 - Math.random() * 45
+          : type === "cotton"
+          ? groundY - 15 - Math.random() * 20
+          : groundY - (type === "log" ? 9 : 15),
+        w: type === "log" ? 65 : type === "sprinkle" ? 48 : 56,
+        h: type === "log" ? 18 : type === "sprinkle" ? 12 : 20,
+        type,
         used: false
       });
-    }
-    for (let i = 350; i < 9000; i += 390) {
-      worldObjects.push({x:i+55,y:groundY-100-(i%3)*15,w:22,h:22,type:"cherry",used:false});
+
+      if (Math.random() < 0.85) {
+        worldObjects.push({
+          x: start + 120 + Math.random() * 140,
+          y: groundY - 90 - Math.random() * 100,
+          w: 22,
+          h: 22,
+          type: "cherry",
+          used: false
+        });
+      }
+
+      generatedUntil += segmentLength;
     }
   }
 
@@ -872,7 +899,6 @@ megaButton.disabled = false;
     cherryText.textContent = "0";
     message.textContent = "Aim your catapult, then launch!";
     launchButton.disabled = false;
-    wingButton.disabled = true;
     draw();
   }
 
@@ -885,18 +911,9 @@ megaButton.disabled = false;
     flying = true; launched = true;
     wingTime = 0;
     launchButton.disabled = true;
-    wingButton.disabled = false;
     message.textContent = "FLY, LITTLE SCOOP! 🍦";
     lastTime = 0;
     animation = requestAnimationFrame(tick);
-  }
-
-  function useWings() {
-    if (!flying || wingTime > 0) return;
-    wingTime = 100;
-    vy = Math.min(vy, -5);
-    message.textContent = "🪽 WHIPPED CREAM WINGS! Glide!";
-    wingButton.disabled = true;
   }
 
   function tick(time) {
@@ -906,6 +923,7 @@ megaButton.disabled = false;
     const oldY = y;
 
     x += vx * dt;
+	  extendWorld(x + 1400);
     y += vy * dt;
     vy += (wingTime > 0 ? 0.055 : 0.27) * dt;
     if (wingTime > 0) {
@@ -940,11 +958,11 @@ megaButton.disabled = false;
           vx *= 1.45;
           vy = -Math.max(5, Math.abs(vy) * 0.6);
           message.textContent = "🍫 CHOCOLATE RAMP BOOST!";
-        } else if (o.type === "cotton") {
-          wingTime = 85;
-          vy = -8;
-          message.textContent = "☁️ COTTON CANDY FLOAT!";
-        }
+} else if (o.type === "cotton") {
+  wingTime = 100;
+  vy = -8;
+  message.textContent = "🪽☁️ AUTOMATIC WINGS + COTTON CANDY FLOAT!";
+		}
       }
     }
 
@@ -973,7 +991,6 @@ megaButton.disabled = false;
 
   function finish() {
     flying = false;
-    wingButton.disabled = true;
     launchButton.disabled = false;
     if (distance > best) {
       best = distance;
@@ -1076,7 +1093,6 @@ megaButton.disabled = false;
   }
 
   launchButton.addEventListener("click", launch);
-  wingButton.addEventListener("click", useWings);
   restartButton.addEventListener("click", reset);
   angleInput.addEventListener("input", () => { if (!launched) draw(); });
   powerInput.addEventListener("input", () => { if (!launched) draw(); });
