@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -168,24 +167,30 @@
 
   <script>
     (function () {
-      const flavors = [
-        "Vanilla",
-        "Chocolate",
-        "Strawberry",
-        "Cookies & Cream",
-        "Mint Chocolate Chip",
-        "Cookie Dough",
-        "Chocolate Chip",
-        "Rocky Road",
-        "Butter Pecan",
-        "Cookie Monster",
-        "Birthday Cake",
-        "Chocolate Fudge",
-        "Salted Caramel",
-        "Pistachio",
-        "Coffee",
-        "Neapolitan"
-      ];
+      
+const flavors = [
+  "Sweet Emotion",
+  "Black Dog",
+  "Dream On",
+  "Born In The USA",
+  "Go Your Own Way",
+  "Barracuda",
+  "Runnin' With The Devil",
+  "Carry On Wayward Son",
+  "Hotel California",
+  "More Than A Feeling",
+  "Magic Man",
+  "Smoke On The Water",
+  "American Pie",
+  "Free Bird",
+  "Rock And Roll All Nite",
+  "Whole Lotta Love",
+  "Vanilla",
+  "Chocolate",
+  "Strawberry",
+  "Mint Chocolate Chip"
+];
+
 
       const colors = [
         "#ff9fba", "#8e6cff", "#ff477e", "#65c8ff",
@@ -281,9 +286,9 @@
             rotation = targetRotation % (Math.PI * 2);
             drawWheel();
 
-            const pointerAngle = (Math.PI * 1.5 - rotation + Math.PI * 2)
-              % (Math.PI * 2);
-            const winner = Math.floor(pointerAngle / slice) % flavors.length;
+            const winner = Math.floor(
+  (((-rotation % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)) / slice
+) % flavors.length;
 
             flavorName.textContent = "🍦 " + flavors[winner] + "!";
             spinning = false;
