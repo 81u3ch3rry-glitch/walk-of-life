@@ -369,18 +369,23 @@ dailyCard.addEventListener("keydown", function(event) {
 .decorative-equalizer {
   position: fixed;
   left: 18px;
+  right: 18px;
   bottom: 0;
   z-index: 1000;
   height: 92px;
   display: flex;
   align-items: flex-end;
+  justify-content: space-between;
   gap: 4px;
   pointer-events: none;
   opacity: .92;
 }
+/* Use the original wide equalizer in Ice Cream Mode; use this full-width one when it is off. */
+body:not(.no-ice-cream-mode) .decorative-equalizer { display: none; }
 .decorative-equalizer span {
   display: block;
-  width: 6px;
+  flex: 1 1 0;
+  max-width: 10px;
   height: 20%;
   border-radius: 4px 4px 0 0;
   background: linear-gradient(to top, #2878c8, #7652c8);
@@ -388,8 +393,8 @@ dailyCard.addEventListener("keydown", function(event) {
   transition: height 220ms ease;
 }
 @media (max-width: 600px) {
-  .decorative-equalizer { left: 8px; height: 62px; gap: 3px; }
-  .decorative-equalizer span { width: 4px; }
+  .decorative-equalizer { left: 8px; right: 8px; height: 62px; gap: 3px; }
+  .decorative-equalizer span { max-width: 5px; }
 }
 </style>
 <div class="decorative-equalizer" aria-hidden="true" id="decorativeEqualizer">
