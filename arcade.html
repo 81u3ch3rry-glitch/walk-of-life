@@ -1277,27 +1277,7 @@ megaButton.disabled = false;
     const title = document.createElement("button"); title.id="wol-open-trophies"; title.textContent="🏆 Open Trophy Room";
     title.addEventListener("click",()=>{room.hidden=!room.hidden; if(!room.hidden) room.scrollIntoView({behavior:"smooth",block:"start"});});
     target.appendChild(title); target.appendChild(room); renderRoom();
-    const resetBtn = document.createElement("button");
-    resetBtn.id = "wol-reset-trophies";
-    resetBtn.textContent = "🔄 Reset Achievements";
-    resetBtn.style.cssText = "display:block;margin:12px auto 24px;padding:11px 18px;border:2px solid #ff8a8a;border-radius:999px;background:#4a1f2a;color:white;font-weight:800;font-size:15px;cursor:pointer;";
-    resetBtn.addEventListener("click", () => {
-      if (!window.confirm("Are you sure you want to reset your achievements? This will lock them again.")) return;
-      if (!window.confirm("Are you REALLY sure? Your earned achievement progress will be reset for this browser.")) return;
-      const fresh = {
-        unlocked: [], visits: [], nightVisits: [], totalSeconds: 0, pinballSweet: 0,
-        megaExplosions: 0, iceCreamToggles: 0, modeTrail: [], lastDay: "", streak: 0,
-        arcadePlayed: false, gameFinished: false,
-        bestCatapult: Number(localStorage.getItem("wolScoopCatapultBest") || 0),
-        sessionStart: Date.now(), sessionSeconds: 0,
-        previousCatapultBest: Number(localStorage.getItem("wolScoopCatapultBest") || 0)
-      };
-      try { localStorage.setItem(KEY, JSON.stringify(fresh)); } catch(e) {}
-      data = fresh;
-      showToast("🔄 Progress reset", "Your achievements are ready to earn again!");
-      renderRoom();
-    });
-    target.appendChild(resetBtn);
+
   }
   if (isArcade) {
     // Finding the Arcade itself is the Easter egg for this achievement.
@@ -1331,8 +1311,9 @@ megaButton.disabled = false;
   document.addEventListener("click", e => {
     const el=e.target.closest("button,[role=button],input[type=button]");
     if(!el)return;
-    const label=((el.innerText||el.value||el.getAttribute("aria-label")||el.title||"")+"").toLowerCase();
-    if(/pause/.test(label)) unlock("Let the Music Play");
+    const label=((el.innerText||el.value||"")+" "+(el.getAttribute("aria-label")||"")+" "+(el.getAttribute("title")||"")+" "+(el.id||"")+" "+(typeof el.className === "string" ? el.className : "")).toLowerCase();
+    const iconOnlyPause = /^(?:⏸|⏸️|Ⅱ|❚❚)$/.test((el.innerText||"").trim());
+    if(/pause/.test(label) || iconOnlyPause) unlock("Let the Music Play");
     if(el.id==="ice-cream-mega-button" || /mega explosion/.test(label)){
       data.megaExplosions=(data.megaExplosions||0)+1;
       if(data.megaExplosions>=5) unlock("Rock You Like a Hurricane");
@@ -1377,16 +1358,13 @@ megaButton.disabled = false;
   document.addEventListener("keydown",e=>{
     if(e.altKey&&e.shiftKey&&e.key.toLowerCase()==="k") unlock("Wanted Dead or Alive");
   });
-  // Observe game status text for a completed game and pinball Sweet Mode events.
-  if(isArcade) {
-    const observer=new MutationObserver(records=>{
-      const txt=(document.body.innerText||"").toLowerCase();
-      if(/game over|you win|you won|victory|you beat|all pairs|you found all|congratulations.*(?:score|win)|scoop catapult.*(?:complete|finished)/s.test(txt)) {
-        data.gameFinished=true; unlock("Another One Bites the Dust");
-      }
+  // Game code announces a real completed run (pinball or snake).
+  if (isArcade) {
+    window.addEventListener("wol:arcade-game-finished", () => {
+      data.gameFinished = true;
+      unlock("Another One Bites the Dust");
       save();
     });
-    observer.observe(document.body,{subtree:true,childList:true,characterData:true});
   }
   // Detect a new personal best from the existing Catapult storage key.
   setInterval(()=>{
