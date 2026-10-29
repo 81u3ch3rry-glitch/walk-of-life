@@ -1101,5 +1101,227 @@ megaButton.disabled = false;
 </script>
 <!-- END SCOOP CATAPULT -->
 <!-- END WALK OF LIFE ARCADE -->
+
+
+<script id="wol-achievements-system">
+(() => {
+  "use strict";
+  const KEY = "wolAchievementsV1";
+  const TEST_BACKUP = "wolAchievementsTestBackupV1";
+  const names = [
+    ["First Steps","Visit Walk Of Life for the first time."],
+    ["Let the Music Play","Use a pause control for the first time."],
+    ["Regular Customer","Visit on 7 different days."],
+    ["Dedicated Listener","Accumulate 60 minutes on the site."],
+    ["Weekend Warrior","Visit on both Saturday and Sunday."],
+    ["Dancing in the Dark","Visit between 9 PM and midnight."],
+    ["Pinball Wizard","Reach Sweet Mode in pinball 5 times."],
+    ["War Machine","Use Mega Explosion 10 times."],
+    ["Sweet Success","Switch Ice Cream Mode ON, OFF, then ON."],
+    ["Adventure Is Out There","Hover over the daily arcade banner."],
+    ["Time Flies","Spend 30 minutes on the site in one visit."],
+    ["Here Comes the Sun","Visit on 3 different days."],
+    ["Don't Stop Believin'","Play an arcade game for the first time."],
+    ["Night Moves","Visit after 10 PM on 3 different days."],
+    ["One Week","Visit on 7 consecutive days."],
+    ["Wanted Dead or Alive","Discover the hidden Secret Flavor Mode."],
+    ["More Than a Feeling","Unlock 5 other achievements."],
+    ["The Final Countdown","Unlock 10 achievements."],
+    ["Crazy Little Thing Called Love","Use the Ice Cream Mode switch 10 times."],
+    ["Take It Easy","Keep Walk Of Life open for 10 minutes in one visit."],
+    ["Rock You Like a Hurricane","Use Mega Explosion 5 times."],
+    ["Another One Bites the Dust","Finish an arcade game."],
+    ["Eye of the Tiger","Beat your personal Scoop Catapult high score."],
+    ["You Shook Me All Night Long","Spend 60 minutes on the site in one visit."],
+    ["We Will Rock You","Unlock 3 arcade-related achievements."]
+  ];
+  const day = () => new Date().toLocaleDateString("en-CA");
+  const now = new Date();
+  const isNight = now.getHours() >= 21;
+  let data;
+  try { data = JSON.parse(localStorage.getItem(KEY) || "null"); } catch(e) {}
+  if (!data || !Array.isArray(data.unlocked)) data = {
+    unlocked: [], visits: [], nightVisits: [], totalSeconds: 0, pinballSweet: 0,
+    megaExplosions: 0, iceCreamToggles: 0, modeTrail: [], lastDay: "", streak: 0,
+    arcadePlayed: false, gameFinished: false, bestCatapult: Number(localStorage.getItem("wolScoopCatapultBest") || 0),
+    sessionStart: Date.now(), sessionSeconds: 0, previousCatapultBest: Number(localStorage.getItem("wolScoopCatapultBest") || 0)
+  };
+  data.unlocked = [...new Set(data.unlocked)].filter(n => names.some(x => x[0] === n));
+  data.visits = Array.isArray(data.visits) ? data.visits : [];
+  data.nightVisits = Array.isArray(data.nightVisits) ? data.nightVisits : [];
+  data.modeTrail = Array.isArray(data.modeTrail) ? data.modeTrail : [];
+  data.sessionStart = Date.now();
+  data.sessionSeconds = 0;
+  const isArcade = /arcade\.html(?:$|[?#])/i.test(location.href) || !!document.getElementById("wol-pinball");
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch(e) {} };
+  function unlock(name) {
+    if (!data.unlocked.includes(name)) {
+      data.unlocked.push(name); save(); showToast("🏆 Achievement unlocked!", name); renderRoom();
+    }
+    checkMeta();
+  }
+  function showToast(title, name) {
+    let toast = document.getElementById("wol-achievement-toast");
+    if (!toast) { toast = document.createElement("div"); toast.id = "wol-achievement-toast"; document.body.appendChild(toast); }
+    toast.innerHTML = `<strong>${title}</strong><span>${escapeHtml(name)}</span>`;
+    toast.classList.remove("wol-toast-show"); void toast.offsetWidth; toast.classList.add("wol-toast-show");
+  }
+  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  function checkMeta() {
+    if (data.unlocked.filter(n => !["More Than a Feeling","The Final Countdown","We Will Rock You"].includes(n)).length >= 5) rawUnlock("More Than a Feeling");
+    if (data.unlocked.filter(n => !["More Than a Feeling","The Final Countdown","We Will Rock You"].includes(n)).length >= 10) rawUnlock("The Final Countdown");
+    const arcadeNames = ["Pinball Wizard","War Machine","Don't Stop Believin'","Another One Bites the Dust","Eye of the Tiger"];
+    if (arcadeNames.filter(n => data.unlocked.includes(n)).length >= 3) rawUnlock("We Will Rock You");
+    save();
+  }
+  function rawUnlock(name) { if (!data.unlocked.includes(name)) { data.unlocked.push(name); showToast("🏆 Achievement unlocked!", name); } }
+  const today = day();
+  if (!data.visits.includes(today)) data.visits.push(today);
+  if (isNight && !data.nightVisits.includes(today)) data.nightVisits.push(today);
+  if (data.lastDay !== today) {
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+    const y = yesterday.toLocaleDateString("en-CA");
+    data.streak = data.lastDay === y ? (data.streak || 0)+1 : 1;
+    data.lastDay = today;
+  }
+  if (data.visits.length >= 1) unlock("First Steps");
+  if (data.visits.length >= 3) unlock("Here Comes the Sun");
+  if (data.visits.length >= 7) unlock("Regular Customer");
+  if (data.visits.some(d => new Date(d).getDay() === 0) && data.visits.some(d => new Date(d).getDay() === 6)) unlock("Weekend Warrior");
+  if (isNight) unlock("Dancing in the Dark");
+  if (data.nightVisits.length >= 3) unlock("Night Moves");
+  if (data.streak >= 7) unlock("One Week");
+  save();
+
+  const roomStyle = document.createElement("style");
+  roomStyle.textContent = `
+    #wol-trophy-room{margin:24px auto;padding:22px;max-width:1100px;border:2px solid #f5c542;border-radius:22px;background:linear-gradient(145deg,#20152d,#39204a);color:#fff;box-shadow:0 10px 30px #0005;font-family:inherit}
+    #wol-trophy-room h2{margin:0 0 8px;text-align:center;font-size:clamp(25px,4vw,38px)}
+    #wol-trophy-room .wol-trophy-sub{text-align:center;opacity:.85;margin-bottom:16px}
+    #wol-trophy-room .wol-achievement-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:12px}
+    #wol-trophy-room .wol-achievement{border:1px solid #ffffff30;border-radius:14px;padding:13px;background:#ffffff0c;min-height:95px}
+    #wol-trophy-room .wol-achievement.unlocked{background:linear-gradient(135deg,#ffd96625,#ffffff12);border-color:#ffd966;box-shadow:0 0 12px #ffd96618}
+    #wol-trophy-room .wol-achievement .wol-ach-icon{font-size:26px;float:left;margin-right:10px}
+    #wol-trophy-room .wol-achievement strong{display:block;margin-bottom:5px}
+    #wol-trophy-room .wol-achievement small{display:block;opacity:.82;line-height:1.35}
+    #wol-trophy-room .wol-lock{opacity:.55}
+    #wol-trophy-room .wol-progress{height:8px;background:#ffffff22;border-radius:9px;overflow:hidden;margin:16px 0 5px}
+    #wol-trophy-room .wol-progress span{display:block;height:100%;background:linear-gradient(90deg,#f5c542,#ff9f43);transition:width .35s}
+    #wol-achievement-toast{position:fixed;z-index:999999;right:18px;top:18px;max-width:300px;padding:15px 18px;border:2px solid #ffd966;border-radius:15px;background:#271735;color:white;box-shadow:0 8px 28px #0008;opacity:0;transform:translateY(-18px);pointer-events:none}
+    #wol-achievement-toast strong,#wol-achievement-toast span{display:block}#wol-achievement-toast span{margin-top:4px}
+    #wol-achievement-toast.wol-toast-show{animation:wolToast 4s ease forwards}
+    @keyframes wolToast{0%{opacity:0;transform:translateY(-18px)}12%,78%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-10px)}}
+    #wol-open-trophies{display:block;margin:18px auto;padding:12px 20px;border:2px solid #f5c542;border-radius:999px;background:#39204a;color:white;font-weight:800;font-size:16px;cursor:pointer}
+  `;
+  document.head.appendChild(roomStyle);
+
+  function renderRoom() {
+    const room = document.getElementById("wol-trophy-room");
+    if (!room) return;
+    const count = data.unlocked.length;
+    room.innerHTML = `<h2>🏆 Trophy Room 🏆</h2><div class="wol-trophy-sub">${count} of ${names.length} achievements unlocked</div><div class="wol-progress"><span style="width:${count/names.length*100}%"></span></div><div class="wol-achievement-grid">${names.map(([name,desc],i)=>{const got=data.unlocked.includes(name);return `<div class="wol-achievement ${got?"unlocked":""}"><span class="wol-ach-icon">${got?"🏆":"🔒"}</span><strong>${escapeHtml(name)}</strong><small>${got?escapeHtml(desc):"Locked achievement — "+escapeHtml(desc)}</small></div>`}).join("")}</div>`;
+  }
+  function addRoom() {
+    if (!isArcade || document.getElementById("wol-trophy-room")) return;
+    const room = document.createElement("section"); room.id = "wol-trophy-room";
+    const target = document.querySelector("main") || document.body;
+    const title = document.createElement("button"); title.id="wol-open-trophies"; title.textContent="🏆 Open Trophy Room";
+    title.addEventListener("click",()=>{room.hidden=!room.hidden; if(!room.hidden) room.scrollIntoView({behavior:"smooth",block:"start"});});
+    target.appendChild(title); target.appendChild(room); renderRoom();
+  }
+  if (isArcade) { if (document.readyState==="loading") document.addEventListener("DOMContentLoaded",addRoom); else addRoom(); }
+
+  // Session time tracking. Timers save periodically and when the page is hidden/unloaded.
+  function tickTime() {
+    const elapsed = Math.floor((Date.now()-data.sessionStart)/1000);
+    data.sessionSeconds = Math.max(data.sessionSeconds || 0, elapsed);
+    data.totalSeconds = Math.max(0, Number(data.totalSeconds)||0);
+    if (elapsed >= 600) unlock("Take It Easy");
+    if (elapsed >= 1800) unlock("Time Flies");
+    if (elapsed >= 3600) unlock("You Shook Me All Night Long");
+    if (data.totalSeconds + elapsed >= 3600) unlock("Dedicated Listener");
+    save();
+  }
+  setInterval(tickTime, 15000);
+  window.addEventListener("pagehide",()=>{tickTime(); data.totalSeconds=(Number(data.totalSeconds)||0)+Math.floor((Date.now()-data.sessionStart)/1000); save();});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){tickTime(); save();}});
+  // Track music pause controls where present (including bridge-injected controls).
+  document.addEventListener("click", e => {
+    const el=e.target.closest("button,[role=button],input[type=button]");
+    if(!el)return;
+    const label=((el.innerText||el.value||el.getAttribute("aria-label")||el.title||"")+"").toLowerCase();
+    if(/pause/.test(label)) unlock("Let the Music Play");
+    if(el.id==="ice-cream-mega-button" || /mega explosion/.test(label)){
+      data.megaExplosions=(data.megaExplosions||0)+1;
+      if(data.megaExplosions>=5) unlock("Rock You Like a Hurricane");
+      if(data.megaExplosions>=10) unlock("War Machine");
+      save();
+    }
+    if(/new game|restart|start game|play snake|start pinball|launch scoop|flavor roulette/i.test(label)) {
+      data.arcadePlayed=true; unlock("Don't Stop Believin'");
+    }
+  }, true);
+  // Mode switch counts and ON -> OFF -> ON sequence.
+  const mode=document.getElementById("iceCreamModeToggle");
+  if(mode) {
+    const recordMode=()=> {
+      data.iceCreamToggles=(data.iceCreamToggles||0)+1;
+      data.modeTrail.push(!!mode.checked); data.modeTrail=data.modeTrail.slice(-3);
+      if(data.iceCreamToggles>=10) unlock("Crazy Little Thing Called Love");
+      if(data.modeTrail.length===3 && data.modeTrail[0]===true && data.modeTrail[1]===false && data.modeTrail[2]===true) unlock("Sweet Success");
+      save();
+    };
+    mode.addEventListener("change",recordMode);
+  }
+  // The banner is an intentional discovery achievement.
+  const banner=document.getElementById("dailyCard");
+  if(banner) {
+    banner.addEventListener("mouseenter",()=>unlock("Adventure Is Out There"),{once:true});
+    banner.addEventListener("focus",()=>unlock("Adventure Is Out There"),{once:true});
+  }
+  // Existing hidden mode shortcut.
+  document.addEventListener("keydown",e=>{
+    if(e.altKey&&e.shiftKey&&e.key.toLowerCase()==="k") unlock("Wanted Dead or Alive");
+  });
+  // Observe game status text for a completed game and pinball Sweet Mode events.
+  if(isArcade) {
+    const observer=new MutationObserver(records=>{
+      const txt=(document.body.innerText||"").toLowerCase();
+      if(/game over|you win|you won|victory|you beat|all pairs|you found all|congratulations.*(?:score|win)|scoop catapult.*(?:complete|finished)/s.test(txt)) {
+        data.gameFinished=true; unlock("Another One Bites the Dust");
+      }
+      if(/sweet mode/.test(txt) && !data._sweetModeActive) {
+        data._sweetModeActive=true; data.pinballSweet=(data.pinballSweet||0)+1;
+        if(data.pinballSweet>=5) unlock("Pinball Wizard");
+      } else if(!/sweet mode/.test(txt)) data._sweetModeActive=false;
+      save();
+    });
+    observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+  }
+  // Detect a new personal best from the existing Catapult storage key.
+  setInterval(()=>{
+    const best=Number(localStorage.getItem("wolScoopCatapultBest")||0);
+    if(best>Number(data.bestCatapult||0)){data.bestCatapult=best;unlock("Eye of the Tiger");save();}
+  },2500);
+
+  // Test helpers. Unlock-all snapshots the current progress once; reset restores that exact snapshot.
+  window.wolUnlockAllAchievements = function() {
+    if (!localStorage.getItem(TEST_BACKUP)) localStorage.setItem(TEST_BACKUP, JSON.stringify(data));
+    data.unlocked = names.map(x=>x[0]); save(); renderRoom(); showToast("🏆 Test mode","All 25 achievements unlocked"); 
+    return "All 25 achievements unlocked for testing. Run wolResetAchievementTest() to restore your saved progress.";
+  };
+  window.wolResetAchievementTest = function() {
+    const backup=localStorage.getItem(TEST_BACKUP);
+    if (backup) { try { data=JSON.parse(backup); } catch(e) {} localStorage.removeItem(TEST_BACKUP); }
+    else { data.unlocked=[]; }
+    data.sessionStart=Date.now(); data.sessionSeconds=0; save(); renderRoom();
+    return backup ? "Test unlocks removed; your saved progress from before testing was restored." : "No test snapshot existed; achievement unlocks were cleared.";
+  };
+  window.wolShowTrophyRoom = function() { addRoom(); const r=document.getElementById("wol-trophy-room"); if(r){r.hidden=false;r.scrollIntoView({behavior:"smooth"});} return "Trophy Room opened."; };
+  window.wolGetAchievements = function() { return JSON.parse(JSON.stringify(data)); };
+  save();
+})();
+</script>
+
 </body>
 </html>
