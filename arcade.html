@@ -1118,7 +1118,7 @@ megaButton.disabled = false;
   const TEST_BACKUP = "wolAchievementsTestBackupV1";
   const names = [
     ["First Steps","Visit Walk Of Life for the first time."],
-    ["Let the Music Play","Use a pause control for the first time."],
+    ["Trophy Hunter","Open the Trophy Room for the first time."],
     ["Regular Customer","Visit on 7 different days."],
     ["Dedicated Listener","Accumulate 60 minutes on the site."],
     ["Weekend Warrior","Visit on both Saturday and Sunday."],
@@ -1313,7 +1313,7 @@ megaButton.disabled = false;
     if(!el)return;
     const label=((el.innerText||el.value||"")+" "+(el.getAttribute("aria-label")||"")+" "+(el.getAttribute("title")||"")+" "+(el.id||"")+" "+(typeof el.className === "string" ? el.className : "")).toLowerCase();
     const iconOnlyPause = /^(?:⏸|⏸️|Ⅱ|❚❚)$/.test((el.innerText||"").trim());
-    if(/pause/.test(label) || iconOnlyPause) unlock("Let the Music Play");
+    if (el.id === "wol-open-trophies") unlock("Trophy Hunter");
     if(el.id==="ice-cream-mega-button" || /mega explosion/.test(label)){
       data.megaExplosions=(data.megaExplosions||0)+1;
       if(data.megaExplosions>=5) unlock("Rock You Like a Hurricane");
